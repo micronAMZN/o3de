@@ -175,12 +175,19 @@ class AbstractResourceLocator(object):
         return os.path.join(self.build_directory(), 'AssetProcessor')
 
     def asset_processor_batch(self):
-        """"
+        """
         Return path for the AssetProcessorBatch compatible with this build platform and configuration
         ex. engine_root/dev/mac/bin/profile/AssetProcessorBatch
         :return: path to AssetProcessorBatch
         """
         return os.path.join(self.build_directory(), 'AssetProcessorBatch')
+
+    def ap_job_logs(self):
+        """
+        Return path to the Asset Processor JobLogs directory.
+        :return: path to <project>/user/log/JobLogs
+        """
+        return os.path.join(self.project_log(), 'JobLogs')
 
     def editor(self):
         """
@@ -384,3 +391,14 @@ class AbstractResourceLocator(object):
             "editor_log() is not implemented on the base AbstractResourceLocator() class. "
             "It must be defined by the inheriting class - "
             "i.e. _WindowsResourceLocator(AbstractResourceLocator).editor_log()")
+
+    @abstractmethod
+    def crash_log(self):
+        """
+        Return path to the project's crash log dir using the builds project and platform
+        :return: path to error.log/crash.log
+        """
+        raise NotImplementedError(
+            "crash_log() is not implemented on the base AbstractResourceLocator() class. "
+            "It must be defined by the inheriting class - "
+            "i.e. _WindowsResourceLocator(AbstractResourceLocator).crash_log()")

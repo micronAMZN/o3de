@@ -159,6 +159,10 @@ namespace AzToolsFramework
         //! By default the asset picker shows both on an AZ::Asset<> property. You can hide product assets with this flag.
         bool m_hideProductFilesInAssetPicker = false;
 
+        //! True to disable the edit button when there is no asset currently selected.
+        bool m_disableEditButtonWhenNoAssetSelected = false;
+
+        bool m_showEditButton = false;
         bool m_showThumbnail = false;
         bool m_showThumbnailDropDownButton = false;
         EditCallbackType* m_thumbnailCallback = nullptr;
@@ -175,10 +179,11 @@ namespace AzToolsFramework
         virtual void SetFolderSelection(const AZStd::string& /* folderPath */) {}
         virtual void ClearAssetInternal();
 
-        void ConfigureAutocompleter();
+        virtual void ConfigureAutocompleter();
         void RefreshAutocompleter();
         void EnableAutocompleter();
         void DisableAutocompleter();
+        const QModelIndex GetSourceIndex(const QModelIndex& index);
 
         void HandleFieldClear();
         AZStd::string AddDefaultSuffix(const AZStd::string& filename);
@@ -219,6 +224,9 @@ namespace AzToolsFramework
         void SetHideProductFilesInAssetPicker(bool hide);
         bool GetHideProductFilesInAssetPicker() const;
 
+        void SetDisableEditButtonWhenNoAssetSelected(bool disableEditButtonWhenNoAssetSelected);
+        bool GetDisableEditButtonWhenNoAssetSelected() const;
+
         // Enable and configure a thumbnail widget that displays an asset preview and dropdown arrow for a dropdown menu
         void SetShowThumbnail(bool enable);
         bool GetShowThumbnail() const;
@@ -235,21 +243,21 @@ namespace AzToolsFramework
         void SetSelectedAssetID(const AZ::Data::AssetId& newID, const AZ::Data::AssetType& newType);
         void SetCurrentAssetHint(const AZStd::string& hint);
         void SetDefaultAssetID(const AZ::Data::AssetId& defaultID);
-        void PopupAssetPicker();
+        virtual void PopupAssetPicker();
         void OnClearButtonClicked();
         void UpdateAssetDisplay();
         void OnLineEditFocus(bool focus);
         virtual void OnEditButtonClicked();
         void OnThumbnailClicked();
         void OnCompletionModelReset();
-        void OnAutocomplete(const QModelIndex& index);
+        virtual void OnAutocomplete(const QModelIndex& index);
         void OnTextChange(const QString& text);
         void OnReturnPressed();
         void ShowContextMenu(const QPoint& pos);
 
     private:
-        const QModelIndex GetSourceIndex(const QModelIndex& index);
         void UpdateThumbnail();
+        void UpdateEditButton();
     };
 
     class AssetPropertyHandlerDefault
@@ -270,7 +278,8 @@ namespace AzToolsFramework
         virtual void UpdateWidgetInternalTabbing(PropertyAssetCtrl* widget) override { widget->UpdateTabOrder(); }
 
         virtual QWidget* CreateGUI(QWidget* pParent) override;
-        virtual void ConsumeAttribute(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName) override;
+        static void ConsumeAttributeInternal(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName);
+        void ConsumeAttribute(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName) override;
         virtual void WriteGUIValuesIntoProperty(size_t index, PropertyAssetCtrl* GUI, property_t& instance, InstanceDataNode* node) override;
         virtual bool ReadValuesIntoGUI(size_t index, PropertyAssetCtrl* GUI, const property_t& instance, InstanceDataNode* node)  override;
     };

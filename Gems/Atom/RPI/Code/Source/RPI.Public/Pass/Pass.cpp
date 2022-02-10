@@ -644,6 +644,7 @@ namespace AZ
                         {
                             attachment->m_path = buffer->GetAttachmentId();
                             attachment->m_importedResource = buffer;
+                            attachment->m_descriptor = buffer->GetRHIBuffer()->GetDescriptor();
                         }
                     }
                 }
@@ -658,6 +659,7 @@ namespace AZ
                         {
                             attachment->m_path = image->GetAttachmentId();
                             attachment->m_importedResource = image;
+                            attachment->m_descriptor = image->GetDescriptor();
                         }
                     }
                 }
@@ -1288,9 +1290,19 @@ namespace AZ
 
         void Pass::FrameBegin(FramePrepareParams params)
         {
+            AZ_PROFILE_SCOPE(RPI, "Pass::FrameBegin() - %s", m_path.GetCStr());
             AZ_RPI_BREAK_ON_TARGET_PASS;
 
-            if (!IsEnabled())
+            bool earlyOut = !IsEnabled();
+
+            // Skip if this pass is the root of the pipeline and the pipeline is set to not render
+            if (m_flags.m_isPipelineRoot)
+            {
+                AZ_RPI_PASS_ASSERT(m_pipeline != nullptr, "Pass is flagged as a pipeline root but it's pipeline pointer is invalid while trying to render");
+                earlyOut = earlyOut || m_pipeline == nullptr || m_pipeline->GetRenderMode() == RenderPipeline::RenderMode::NoRender;
+            }
+
+            if (earlyOut)
             {
                 UpdateConnectedBindings();
                 return;
@@ -1310,7 +1322,10 @@ namespace AZ
 
             // FrameBeginInternal needs to be the last function be called in FrameBegin because its implementation expects 
             // all the attachments are imported to database (for example, ImageAttachmentPreview)
-            FrameBeginInternal(params);
+            {
+                AZ_PROFILE_SCOPE(RPI, "Pass::FrameBeginInternal()");
+                FrameBeginInternal(params);
+            }
             
             // readback attachment with output state
             UpdateReadbackAttachment(params, false);

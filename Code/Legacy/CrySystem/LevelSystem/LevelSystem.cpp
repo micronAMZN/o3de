@@ -15,10 +15,9 @@
 #include <ILocalizationManager.h>
 #include "CryPath.h"
 
-#include <LoadScreenBus.h>
+#include <CryCommon/LoadScreenBus.h>
 #include <CryCommon/StaticInstance.h>
 
-#include <AzCore/Debug/AssetTracking.h>
 #include <AzCore/Time/ITime.h>
 #include <AzFramework/API/ApplicationAPI.h>
 #include <AzFramework/IO/FileOperations.h>
@@ -42,7 +41,7 @@ bool CLevelInfo::OpenLevelPak()
 {
     bool usePrefabSystemForLevels = false;
     AzFramework::ApplicationRequests::Bus::BroadcastResult(
-        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemForLevelsEnabled);
+        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemEnabled);
 
     // The prefab system doesn't use level.pak
     if (usePrefabSystemForLevels)
@@ -63,7 +62,7 @@ void CLevelInfo::CloseLevelPak()
 {
     bool usePrefabSystemForLevels = false;
     AzFramework::ApplicationRequests::Bus::BroadcastResult(
-        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemForLevelsEnabled);
+        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemEnabled);
 
     // The prefab system doesn't use level.pak
     if (usePrefabSystemForLevels)
@@ -83,7 +82,7 @@ bool CLevelInfo::ReadInfo()
 {
     bool usePrefabSystemForLevels = false;
     AzFramework::ApplicationRequests::Bus::BroadcastResult(
-        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemForLevelsEnabled);
+        usePrefabSystemForLevels, &AzFramework::ApplicationRequests::IsPrefabSystemEnabled);
 
     // Set up a default game type for legacy code.
     m_defaultGameTypeName = "mission0";
@@ -540,7 +539,6 @@ bool CLevelSystem::LoadLevel(const char* _levelName)
 ILevel* CLevelSystem::LoadLevelInternal(const char* _levelName)
 {
     gEnv->pSystem->SetSystemGlobalState(ESYSTEM_GLOBAL_STATE_LEVEL_LOAD_START);
-    AZ_ASSET_NAMED_SCOPE("Level: %s", _levelName);
 
     CryLog ("Level system is loading \"%s\"", _levelName);
     INDENT_LOG_DURING_SCOPE();

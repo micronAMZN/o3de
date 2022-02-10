@@ -20,6 +20,7 @@
 #include <AzToolsFramework/Commands/EntityManipulatorCommand.h>
 #include <AzToolsFramework/API/ViewportEditorModeTrackerNotificationBus.h>
 #include <AzToolsFramework/Editor/EditorContextMenuBus.h>
+#include <AzToolsFramework/Entity/ReadOnly/ReadOnlyEntityBus.h>
 #include <AzToolsFramework/Manipulators/BaseManipulator.h>
 #include <AzToolsFramework/ToolsComponents/EditorLockComponentBus.h>
 #include <AzToolsFramework/ToolsComponents/EditorVisibilityBus.h>
@@ -33,7 +34,7 @@
 
 namespace AzToolsFramework
 {
-    class EditorVisibleEntityDataCache;
+    class EditorVisibleEntityDataCacheInterface;
 
     using EntityIdSet = AZStd::unordered_set<AZ::EntityId>; //!< Alias for unordered_set of EntityIds.
 
@@ -160,12 +161,13 @@ namespace AzToolsFramework
         , private EditorManipulatorCommandUndoRedoRequestBus::Handler
         , private AZ::TransformNotificationBus::MultiHandler
         , private ViewportInteraction::ViewportSettingsNotificationBus::Handler
+        , private ReadOnlyEntityPublicNotificationBus::Handler
     {
     public:
         AZ_CLASS_ALLOCATOR_DECL
 
         EditorTransformComponentSelection() = default;
-        explicit EditorTransformComponentSelection(const EditorVisibleEntityDataCache* entityDataCache);
+        explicit EditorTransformComponentSelection(const EditorVisibleEntityDataCacheInterface* entityDataCache);
         EditorTransformComponentSelection(const EditorTransformComponentSelection&) = delete;
         EditorTransformComponentSelection& operator=(const EditorTransformComponentSelection&) = delete;
         virtual ~EditorTransformComponentSelection();
@@ -297,6 +299,9 @@ namespace AzToolsFramework
         // ViewportSettingsNotificationBus overrides ...
         void OnGridSnappingChanged(bool enabled) override;
 
+        // ReadOnlyEntityPublicNotificationBus overrides ...
+        void OnReadOnlyEntityStatusChanged(const AZ::EntityId& entityId, bool readOnly) override;
+
         // Helpers to safely interact with the TransformBus (requests).
         void SetEntityWorldTranslation(AZ::EntityId entityId, const AZ::Vector3& worldTranslation);
         void SetEntityLocalTranslation(AZ::EntityId entityId, const AZ::Vector3& localTranslation);
@@ -320,10 +325,8 @@ namespace AzToolsFramework
         AZ::EntityId m_currentEntityIdUnderCursor; //!< Store the EntityId on each mouse move for use in Display.
         AZ::EntityId m_editorCameraComponentEntityId; //!< The EditorCameraComponent EntityId if it is set.
         EntityIdSet m_selectedEntityIds; //!< Represents the current entities in the selection.
-
-        const EditorVisibleEntityDataCache* m_entityDataCache = nullptr; //!< A cache of packed EntityData that can be
-                                                                         //!< iterated over efficiently without the need
-                                                                         //!< to make individual EBus calls.
+        //! A cache of packed EntityData that can be iterated over efficiently without the need to make individual EBus calls.
+        const EditorVisibleEntityDataCacheInterface* m_entityDataCache = nullptr; 
         AZStd::unique_ptr<EditorHelpers> m_editorHelpers; //!< Editor visualization of entities (icons, shapes, debug visuals etc).
         EntityIdManipulators m_entityIdManipulators; //!< Mapping from a Manipulator to potentially many EntityIds.
 

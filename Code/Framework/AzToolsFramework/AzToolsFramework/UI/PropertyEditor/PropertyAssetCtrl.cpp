@@ -102,7 +102,7 @@ namespace AzToolsFramework
         m_editButton->setAutoRaise(true);
         m_editButton->setIcon(QIcon(":/stylesheet/img/UI20/open-in-internal-app.svg"));
         m_editButton->setToolTip("Edit asset");
-        m_editButton->setVisible(false);
+        SetEditButtonVisible(false);
 
         connect(m_editButton, &QToolButton::clicked, this, &PropertyAssetCtrl::OnEditButtonClicked);
 
@@ -961,11 +961,15 @@ namespace AzToolsFramework
             AzFramework::StringFunc::Path::GetFileName(assetPath.c_str(), m_defaultAssetHint);
         }
         m_browseEdit->setPlaceholderText((m_defaultAssetHint + m_DefaultSuffix).c_str());
+
+        UpdateEditButton();
     }
 
     void PropertyAssetCtrl::UpdateAssetDisplay()
     {
         UpdateThumbnail();
+
+        UpdateEditButton();
 
         if (m_currentAssetType == AZ::Data::s_invalidAssetType)
         {
@@ -1109,7 +1113,9 @@ namespace AzToolsFramework
 
     void PropertyAssetCtrl::SetEditButtonVisible(bool visible)
     {
-        m_editButton->setVisible(visible);
+        m_showEditButton = visible;
+        m_editButton->setVisible(m_showEditButton);
+        UpdateEditButton();
     }
 
     void PropertyAssetCtrl::SetEditButtonIcon(const QIcon& icon)
@@ -1205,6 +1211,15 @@ namespace AzToolsFramework
         m_thumbnail->ClearThumbnail();
     }
 
+    void PropertyAssetCtrl::UpdateEditButton()
+    {
+        // if Edit button is in use (shown), enable/disable it depending on the current asset id.
+        if (m_showEditButton && m_disableEditButtonWhenNoAssetSelected)
+        {
+            m_editButton->setEnabled(GetCurrentAssetID().IsValid());
+        }
+    }
+
     void PropertyAssetCtrl::SetClearButtonEnabled(bool enable)
     {
         m_browseEdit->setClearButtonEnabled(enable);
@@ -1234,6 +1249,17 @@ namespace AzToolsFramework
     bool PropertyAssetCtrl::GetHideProductFilesInAssetPicker() const
     {
         return m_hideProductFilesInAssetPicker;
+    }
+
+    void PropertyAssetCtrl::SetDisableEditButtonWhenNoAssetSelected(bool disableEditButtonWhenNoAssetSelected)
+    {
+        m_disableEditButtonWhenNoAssetSelected = disableEditButtonWhenNoAssetSelected;
+        UpdateEditButton();
+    }
+
+    bool PropertyAssetCtrl::GetDisableEditButtonWhenNoAssetSelected() const
+    {
+        return m_disableEditButtonWhenNoAssetSelected;
     }
 
     void PropertyAssetCtrl::SetShowThumbnail(bool enable)
@@ -1288,7 +1314,7 @@ namespace AzToolsFramework
         return newCtrl;
     }
 
-    void AssetPropertyHandlerDefault::ConsumeAttribute(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName)
+    void AssetPropertyHandlerDefault::ConsumeAttributeInternal(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName)
     {
         (void)debugName;
 
@@ -1348,6 +1374,12 @@ namespace AzToolsFramework
             {
                 GUI->SetEditButtonTooltip(tr(buttonTooltip.c_str()));
             }
+        }
+        else if (attrib == AZ_CRC_CE("DisableEditButtonWhenNoAssetSelected"))
+        {
+            bool disableEditButtonWhenNoAssetSelected = false;
+            attrValue->Read<bool>(disableEditButtonWhenNoAssetSelected);
+            GUI->SetDisableEditButtonWhenNoAssetSelected(disableEditButtonWhenNoAssetSelected);
         }
         else if (attrib == AZ::Edit::Attributes::DefaultAsset)
         {
@@ -1487,6 +1519,11 @@ namespace AzToolsFramework
         }
     }
 
+    void AssetPropertyHandlerDefault::ConsumeAttribute(PropertyAssetCtrl* GUI, AZ::u32 attrib, PropertyAttributeReader* attrValue, const char* debugName)
+    {
+        ConsumeAttributeInternal(GUI, attrib, attrValue, debugName);
+    }
+
     void AssetPropertyHandlerDefault::WriteGUIValuesIntoProperty(size_t index, PropertyAssetCtrl* GUI, property_t& instance, InstanceDataNode* node)
     {
         (void)index;
@@ -1592,6 +1629,12 @@ namespace AzToolsFramework
                 GUI->SetEditButtonTooltip(tr(buttonTooltip.c_str()));
             }
         }
+        else if (attrib == AZ_CRC_CE("DisableEditButtonWhenNoAssetSelected"))
+        {
+            bool disableEditButtonWhenNoAssetSelected = false;
+            attrValue->Read<bool>(disableEditButtonWhenNoAssetSelected);
+            GUI->SetDisableEditButtonWhenNoAssetSelected(disableEditButtonWhenNoAssetSelected);
+        }
     }
 
     void SimpleAssetPropertyHandlerDefault::WriteGUIValuesIntoProperty(size_t index, PropertyAssetCtrl* GUI, property_t& instance, InstanceDataNode* node)
@@ -1629,8 +1672,8 @@ namespace AzToolsFramework
 
     void RegisterAssetPropertyHandler()
     {
-        EBUS_EVENT(PropertyTypeRegistrationMessages::Bus, RegisterPropertyType, aznew AssetPropertyHandlerDefault());
-        EBUS_EVENT(PropertyTypeRegistrationMessages::Bus, RegisterPropertyType, aznew SimpleAssetPropertyHandlerDefault());
+        PropertyTypeRegistrationMessages::Bus::Broadcast(&PropertyTypeRegistrationMessages::RegisterPropertyType, aznew AssetPropertyHandlerDefault());
+        PropertyTypeRegistrationMessages::Bus::Broadcast(&PropertyTypeRegistrationMessages::RegisterPropertyType, aznew SimpleAssetPropertyHandlerDefault());
     }
 }
 

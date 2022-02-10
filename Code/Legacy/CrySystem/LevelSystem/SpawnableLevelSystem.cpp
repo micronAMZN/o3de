@@ -10,9 +10,8 @@
 #include "SpawnableLevelSystem.h"
 #include "IMovieSystem.h"
 
-#include <LoadScreenBus.h>
+#include <CryCommon/LoadScreenBus.h>
 
-#include <AzCore/Debug/AssetTracking.h>
 #include <AzFramework/API/ApplicationAPI.h>
 #include <AzFramework/IO/FileOperations.h>
 #include <AzFramework/Entity/GameEntityContextBus.h>
@@ -258,7 +257,6 @@ namespace LegacyLevelSystem
     bool SpawnableLevelSystem::LoadLevelInternal(const char* levelName)
     {
         gEnv->pSystem->SetSystemGlobalState(ESYSTEM_GLOBAL_STATE_LEVEL_LOAD_START);
-        AZ_ASSET_NAMED_SCOPE("Level: %s", levelName);
 
         INDENT_LOG_DURING_SCOPE();
 
